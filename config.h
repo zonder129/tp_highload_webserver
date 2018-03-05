@@ -9,7 +9,7 @@
 /*Buffer of DATE header*/
 #define TIME_BUFSIZE 1024
 /* Port to listen on. */
-#define SERVER_PORT 5550
+#define SERVER_PORT 80
 /* Connection backlog (# of backlogged connections to accept). */
 #define CONNECTION_BACKLOG 8
 /* Socket read and write timeouts, in seconds. */
