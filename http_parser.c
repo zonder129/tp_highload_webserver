@@ -41,31 +41,25 @@ int http_parse(http_t *http_request, struct evbuffer *client_buffer) {
 
     printf("ALLOWED METHODS\n");
 
-
-//    /* read (and ignore) the HTTP headers */
-//    strcpy(http_request->buf, evbuffer_readln(event_buffer, &line_size, EVBUFFER_EOL_ANY));
-//    printf("READ HEADER\n");
-//    while(strcmp(http_request->buf, "\r\n") != 0) {
-//        printf("READING SMTH\n");
-//        strcpy(http_request->buf, evbuffer_readln(event_buffer, &line_size, EVBUFFER_EOL_ANY));
-//        printf("SMTH READED\n");
-//    }
-//
-//    printf("HEADERS PARSED\n");
-
-    /* parse the uri [crufty] */
-    if (!strstr(http_request->uri, "cgi-bin")) { /* static content */
+    /* parse the uri */
+    if (!strstr(http_request->uri, "cgi-bin")) {
         strcpy(http_request->cgiargs, "");
-        strcpy(http_request->filename, ".");
+        strcpy(http_request->filename, DOCUMENT_ROOT);
         strcat(http_request->filename, http_request->uri);
         if (http_request->uri[strlen(http_request->uri)-1] == '/') {
             strcat(http_request->filename, "index.html");
         }
     }
 
+    printf("%s\n", http_request->filename);
+
+    if (strstr(http_request->uri, "/..")) {
+        return ESCAPING_ROOT;
+    }
+
     /* make sure the file exists */
     if (stat(http_request->filename, &sbuf) < 0) {
-      return FILE_NOT_EXIST;
+        return FILE_NOT_EXIST;
     }
 
     /* serve static content */

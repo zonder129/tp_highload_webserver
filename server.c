@@ -1,13 +1,3 @@
-/**
- * Multithreaded, libevent-based socket server.
- * Copyright (c) 2012-2015 Ronald Bennett Cemer
- * This software is licensed under the BSD license.
- * See the accompanying LICENSE.txt for details.
- *
- * To compile: gcc -o echoserver_threaded echoserver_threaded.c workqueue.c -levent -lpthread
- * To run: ./echoserver_threaded
- */
-
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -43,9 +33,6 @@ typedef struct client {
 
 	/* The output buffer for this client. */
 	struct evbuffer *output_buffer;
-
-	/* Here you can add your own application-specific attributes which
-	 * are connection-specific. */
 } client_t;
 
 static struct event_base *evbase_accept;
@@ -128,6 +115,8 @@ void buffered_on_read(struct bufferevent *bev, void *arg) {
             create_response("200", "OK", response);
             printf("200 OK\n");
             break;
+        case ESCAPING_ROOT :
+            create_response("400", "Bad request", response);
         default:
             printf("DEFAULT 500 ERROR\n");
             create_response("500", "Internal server error", response);
@@ -157,17 +146,20 @@ void buffered_on_read(struct bufferevent *bev, void *arg) {
 		closeClient(client);
 	}
 
-    printf("BUFFEREVENT ON READ CALLBACK END\n");
+    event_base_loopexit(client->evbase, 0);
 }
 
-void buffered_on_write(struct bufferevent* event, void* arg){
-}
+//void release_client(struct bufferevent *bev, short what, void *arg){
+//   client_t *client = (client_t *)arg;
+//    closeClient(client);
+//}
 
 static void server_job_function(struct job *job) {
-    printf("WORKER DOING JOB\n");
+    printf("WORKER START DOING JOB\n");
 	client_t *client = (client_t *)job->user_data;
 
-	event_base_dispatch(client->evbase);
+	event_base_loop(client->evbase, 0);
+    printf("WORKER AFTER EVENT BASE LOOP\n");
 	closeAndFreeClient(client);
 	free(job);
 }
@@ -211,9 +203,6 @@ void on_accept(int fd, short ev, void *arg) {
 	memset(client, 0, sizeof(*client));
 	client->fd = client_fd;
 
-	/* Add any custom code anywhere from here to the end of this function
-	 * to initialize your application-specific attributes in the client struct. */
-
 	if ((client->output_buffer = evbuffer_new()) == NULL) {
 		warn("client output buffer allocation failed");
 		closeAndFreeClient(client);
@@ -241,19 +230,18 @@ void on_accept(int fd, short ev, void *arg) {
 
     printf("AFTER SET CALLBACK\n");
 
-
-	bufferevent_base_set(client->evbase, client->buf_ev);
+	//bufferevent_base_set(client->evbase, client->buf_ev);
 
     printf("AFTER BASE_SET BUFEV\n");
 
-	bufferevent_set_timeouts(client->buf_ev, NULL,
-                             NULL);
-    printf("AFTER TIMEOUT\n");
+//	bufferevent_set_timeouts(client->buf_ev, NULL,
+//                             NULL);
+//    printf("AFTER TIMEOUT\n");
 
 
 	/* We have to enable it before our callbacks will be
 	 * called. */
-	if(bufferevent_enable(client->buf_ev, EV_READ|EV_WRITE)){
+	if(bufferevent_enable(client->buf_ev, EV_READ)){
         warn("error in bufferevent for client");
         return;
     };

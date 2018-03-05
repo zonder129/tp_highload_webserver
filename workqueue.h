@@ -1,10 +1,3 @@
-/**
- * Multithreaded work queue.
- * Copyright (c) 2012-2015 Ronald Bennett Cemer
- * This software is licensed under the BSD license.
- * See the accompanying LICENSE.txt for details.
- */
-
 #ifndef WORKQUEUE_H
 #define WORKQUEUE_H
 

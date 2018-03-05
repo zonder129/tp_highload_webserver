@@ -7,6 +7,7 @@
 #define NOT_ALLOWED_HTTP_METHOD -1
 #define FILE_NOT_EXIST -2
 #define FILE_IS_EXECUTABLE -3
+#define ESCAPING_ROOT -4
 
 typedef struct http {
     char method[REQUEST_BUFSIZE];  /* request method */
