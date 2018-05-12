@@ -5,8 +5,8 @@
 
 void create_response (char *status,
                        char *status_msg, char* response) {
-    sprintf(response, "HTTP/1.1 %s %s\n", status, status_msg);
-    sprintf(response + strlen(response), "Server: The zonder129 Web server\n");
+    sprintf(response, "HTTP/1.1 %s %s\r\n", status, status_msg);
+    sprintf(response + strlen(response), "Server: The zonder129 Web server\r\n");
     char buf[TIME_BUFSIZE];
     time_t now = time(NULL);
     struct tm tm = *gmtime(&now);

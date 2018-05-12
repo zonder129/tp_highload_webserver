@@ -8,6 +8,8 @@
 #define FILE_NOT_EXIST -2
 #define FILE_IS_EXECUTABLE -3
 #define ESCAPING_ROOT -4
+#define PARSE_ERROR -5
+#define INDEX_FILE_NOT_EXIST -6
 
 typedef struct http {
     char method[REQUEST_BUFSIZE];  /* request method */

@@ -66,10 +66,10 @@ static void closeClient(client_t *client) {
 static void closeAndFreeClient(client_t *client) {
 	if (client != NULL) {
 		closeClient(client);
-		if (client->buf_ev != NULL) {
-			bufferevent_free(client->buf_ev);
-			client->buf_ev = NULL;
-		}
+		// if (client->buf_ev != NULL) {
+		// 	bufferevent_free(client->buf_ev);
+		// 	client->buf_ev = NULL;
+		// }
 		if (client->evbase != NULL) {
 			event_base_free(client->evbase);
 			client->evbase = NULL;
@@ -96,7 +96,7 @@ void buffered_on_read(struct bufferevent *bev, void *arg) {
     char response[RESPONSE_BUFSIZE];
     printf("BEFORE HTTP PARSE\n");
 
-    response_id = http_parse(&http_request, bufferevent_get_input(client->buf_ev));
+    response_id = http_parse(&http_request, bufferevent_get_input(bev));
     printf("AFTER HTTP PARSE\n");
     switch (response_id) {
         case NOT_ALLOWED_HTTP_METHOD :
@@ -116,7 +116,17 @@ void buffered_on_read(struct bufferevent *bev, void *arg) {
             printf("200 OK\n");
             break;
         case ESCAPING_ROOT :
-            create_response("400", "Bad request", response);
+            printf("403 ERROR\n");
+            create_response("403", "Forbidden", response);
+            break;
+        case PARSE_ERROR : 
+            printf("PARSE ERROR\n");
+        	create_response("400", "Bad request", response);
+            break;
+        case INDEX_FILE_NOT_EXIST:
+            printf("INDEX ERROR\n");
+            create_response("403", "Forbidden", response);
+            break;
         default:
             printf("DEFAULT 500 ERROR\n");
             create_response("500", "Internal server error", response);
@@ -136,17 +146,41 @@ void buffered_on_read(struct bufferevent *bev, void *arg) {
         printf("INSIGHT GET 200 HEADER CONDITION\n");
         int fd = open(http_request.filename, O_RDONLY, 0);
         evbuffer_add_file(client->output_buffer, fd, 0, http_request.filesize);
-        printf("CLIENT OUTPUT BUFFER FILLED WITH FILE\n");
+        printf("CLIENT OUTPUT BUFFER FILLED WITH FILE WITH SIZE %zu\n", http_request.filesize);
     }
-
+    if(strcmp(http_request.method, "HEAD") == 0){
+        printf("THIS IS HEAD\n%s", response);
+    }
+    bufferevent_disable(bev, EV_READ);
+    bufferevent_enable(bev, EV_WRITE);
 	/* Send the results to the client.  This actually only queues the results for sending.
 	 * Sending will occur asynchronously, handled by libevent. */
 	if (bufferevent_write_buffer(bev, client->output_buffer) != 0) {
         printf("BUFFEREVENT ERROR\n");
-		closeClient(client);
-	}
+        closeClient(client);
+    }
 
-    event_base_loopexit(client->evbase, 0);
+    //struct timeval delay = { 1e };
+}
+
+void buffered_on_write(struct bufferevent *bev, void *arg) {
+    struct evbuffer *output = bufferevent_get_output(bev);
+    if (evbuffer_get_length(output) == 0) {
+        printf("flushed answer\n");
+        bufferevent_free(bev);
+    }
+}
+
+void eventcb(struct bufferevent *bev, short events, void *arg)
+{
+    if (events & BEV_EVENT_EOF) {
+        printf("Connection closed.\n");
+    } else if (events & (BEV_EVENT_ERROR)) {
+         perror("Error on the connection\n");
+         bufferevent_free(bev);
+         //event_base_loopexit(client->evbase, NULL);
+    }
+    //bufferevent_free(bev);
 }
 
 //void release_client(struct bufferevent *bev, short what, void *arg){
@@ -158,9 +192,10 @@ static void server_job_function(struct job *job) {
     printf("WORKER START DOING JOB\n");
 	client_t *client = (client_t *)job->user_data;
 
-	event_base_loop(client->evbase, 0);
+	event_base_dispatch(client->evbase);
     printf("WORKER AFTER EVENT BASE LOOP\n");
 	closeAndFreeClient(client);
+    printf("CLIENT CLOSED\n");
 	free(job);
 }
 
@@ -170,15 +205,13 @@ static void server_job_function(struct job *job) {
  */
 void on_accept(int fd, short ev, void *arg) {
 
-    printf("RUN\n");
+    printf("ACCEPT CONNECTION\n");
 	int client_fd;
 	struct sockaddr_in client_addr;
 	socklen_t client_len = sizeof(client_addr);
 	workqueue_t *workqueue = (workqueue_t *)arg;
 	client_t *client;
 	job_t *job;
-
-    printf("HELLO\n");
 
 	client_fd = accept(fd, (struct sockaddr *)&client_addr, &client_len);
 	if (client_fd < 0) {
@@ -226,18 +259,9 @@ void on_accept(int fd, short ev, void *arg) {
 
     printf("AFTER SOCKET NEW\n");
 
-    bufferevent_setcb(client->buf_ev, buffered_on_read, NULL, NULL, client);
+    bufferevent_setcb(client->buf_ev, buffered_on_read, buffered_on_write, eventcb, client);
 
     printf("AFTER SET CALLBACK\n");
-
-	//bufferevent_base_set(client->evbase, client->buf_ev);
-
-    printf("AFTER BASE_SET BUFEV\n");
-
-//	bufferevent_set_timeouts(client->buf_ev, NULL,
-//                             NULL);
-//    printf("AFTER TIMEOUT\n");
-
 
 	/* We have to enable it before our callbacks will be
 	 * called. */
@@ -265,6 +289,7 @@ void on_accept(int fd, short ev, void *arg) {
 	workqueue_add_job(workqueue, job);
 
     printf("AFTER ADD JOB\n");
+
 }
 
 /**
@@ -313,7 +338,7 @@ int runServer(void) {
 	/* Set the socket to non-blocking, this is essential in event
 	 * based programming with libevent. */
 	if (setnonblock(listenfd) < 0) {
-		err(1, "failed to set server socket to non-blocking");
+		perror("failed to set server socket to non-blocking");
 	}
 
 	if ((evbase_accept = event_base_new()) == NULL) {

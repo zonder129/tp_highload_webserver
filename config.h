@@ -16,6 +16,9 @@
 #define SOCKET_READ_TIMEOUT_SECONDS 1
 #define SOCKET_WRITE_TIMEOUT_SECONDS 1
 /* Number of worker threads.  Should match number of CPU cores reported in /proc/cpuinfo. */
-#define NUM_THREADS 2
-#define DOCUMENT_ROOT "/var/www/html"
+#define NUM_THREADS 4
+/* for linux /var/www/html 
+   for macos /library/webserver/documents */
+#define DOCUMENT_ROOT "/library/webserver/documents"
+
 #endif //CONFIG_H
