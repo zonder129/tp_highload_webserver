@@ -8,6 +8,6 @@ ADD . .
 
 RUN RUN cc -o highload *.c -lpthread -levent
 
-EXPOSE 8000
+EXPOSE 80
 
 CMD ./highload

@@ -9,7 +9,7 @@
 /*Buffer of DATE header*/
 #define TIME_BUFSIZE 1024
 /* Port to listen on. */
-#define SERVER_PORT 8000
+#define SERVER_PORT 80
 /* Connection backlog (# of backlogged connections to accept). */
 #define CONNECTION_BACKLOG 8
 /* Socket read and write timeouts, in seconds. */
@@ -19,6 +19,6 @@
 #define NUM_THREADS 4
 /* for linux /var/www/html 
    for macos /library/webserver/documents */
-#define DOCUMENT_ROOT "/library/webserver/documents"
+#define DOCUMENT_ROOT "/var/www/html"
 
 #endif //CONFIG_H
