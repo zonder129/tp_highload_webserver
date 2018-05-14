@@ -13,7 +13,8 @@
 #include <event2/bufferevent.h>
 #include <signal.h>
 
-#include "config.h"
+#include "config_parser.h"
+#include "default_config.h"
 #include "workqueue.h"
 #include "http_parser.h"
 #include "response_template.h"
@@ -296,6 +297,21 @@ void on_accept(int fd, short ev, void *arg) {
  * Run the server.  This function blocks, only returning when the server has terminated.
  */
 int runServer(void) {
+	struct configf config;
+    config.port = DEFAULT_SERVER_PORT;
+    config.cpu = DEFAULT_NUM_THREADS;
+
+    if (sprintf(config.path, "%s", DEFAULT_DOCUMENT_ROOT) < 0) {
+        perror("Sprintf error");
+        //return ERROR_SPRINTF;
+    }
+
+    int error = parse_config(&config);
+    if (error != 0) {
+        fprintf(stderr, "Can't parse %s\n", PATH);
+        //return error;
+    }
+
 	int listenfd;
 	struct sockaddr_in listen_addr;
 	int reuseaddr_on;
@@ -322,7 +338,7 @@ int runServer(void) {
 	memset(&listen_addr, 0, sizeof(listen_addr));
 	listen_addr.sin_family = AF_INET;
 	listen_addr.sin_addr.s_addr = INADDR_ANY;
-	listen_addr.sin_port = htons(SERVER_PORT);
+	listen_addr.sin_port = htons(config.port);
 
     if (bind(listenfd, (struct sockaddr *)&listen_addr, sizeof(listen_addr)) < 0) {
 		err(1, "bind failed");
@@ -348,7 +364,7 @@ int runServer(void) {
 	}
 
 	/* Initialize work queue. */
-	if (workqueue_init(&workqueue, NUM_THREADS)) {
+	if (workqueue_init(&workqueue, config.cpu)) {
 		perror("Failed to create work queue");
 		close(listenfd);
 		workqueue_shutdown(&workqueue);

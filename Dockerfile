@@ -6,7 +6,7 @@ RUN apt-get -y install libevent-dev
 
 ADD . .
 
-RUN RUN cc -o highload *.c -lpthread -levent
+RUN gcc -o highload *.c -lpthread -levent
 
 EXPOSE 80
 

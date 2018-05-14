@@ -38,7 +38,6 @@ void decode_uri(char* src, char* dest, int max) {
     }
     *dest = '\0';
 }
- 
 
 int http_parse(http_t *http_request, struct evbuffer *client_buffer) {
 
@@ -70,7 +69,7 @@ int http_parse(http_t *http_request, struct evbuffer *client_buffer) {
     /* parse the uri */
     if (!strstr(http_request->uri, "cgi-bin")) {
         strcpy(http_request->cgiargs, "");
-        strcpy(http_request->filename, DOCUMENT_ROOT);
+        strcpy(http_request->filename, DEFAULT_DOCUMENT_ROOT);
         if(strstr(http_request->uri, "%")) {
             printf("uri need to be decoded\n");
             decode_uri(http_request->uri, http_request->uri, strlen(http_request->uri));

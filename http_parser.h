@@ -1,6 +1,6 @@
 #ifndef HTTP_PARSER_H
 #define HTTP_PARSER_H
-#include "config.h"
+#include "default_config.h"
 #include <string.h>
 
 #define ALL_OK 1
