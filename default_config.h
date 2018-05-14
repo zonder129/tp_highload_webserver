@@ -16,6 +16,6 @@
 #define DEFAULT_NUM_THREADS 4
 /* for linux /var/www/html 
    for macos /library/webserver/documents */
-#define DEFAULT_DOCUMENT_ROOT "/var/www/html"
+#define DEFAULT_DOCUMENT_ROOT "/library/webserver/documents"
 
 #endif //DEFAULT_CONFIG_H

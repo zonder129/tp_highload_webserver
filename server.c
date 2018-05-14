@@ -177,7 +177,8 @@ void eventcb(struct bufferevent *bev, short events, void *arg)
     if (events & BEV_EVENT_EOF) {
         printf("Connection closed.\n");
     } else if (events & (BEV_EVENT_ERROR)) {
-         perror("Error on the connection\n");
+         perror("Error on the connection");
+         //closeClient((client_t *)arg);
          bufferevent_free(bev);
          //event_base_loopexit(client->evbase, NULL);
     }
@@ -193,7 +194,7 @@ static void server_job_function(struct job *job) {
     printf("WORKER START DOING JOB\n");
 	client_t *client = (client_t *)job->user_data;
 
-	event_base_dispatch(client->evbase);
+	event_base_loop(client->evbase, EVLOOP_NONBLOCK);
     printf("WORKER AFTER EVENT BASE LOOP\n");
 	closeAndFreeClient(client);
     printf("CLIENT CLOSED\n");
